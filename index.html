@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Stundenzettel</title>
+<meta name="theme-color" content="#2563eb">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Stundenzettel">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#f4f5f7;--card:#fff;--text:#1b1f24;--muted:#6b7280;--line:#e5e7eb;
+  --accent:#2563eb;--accent-text:#fff;--tip:#d97706;--total:#059669;--danger:#dc2626;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#111418;--card:#1b2027;--text:#eef0f3;--muted:#9aa3af;--line:#2c333c;
+    --accent:#3b82f6;--tip:#f59e0b;--total:#34d399;--danger:#f87171;color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#111418;--card:#1b2027;--text:#eef0f3;--muted:#9aa3af;--line:#2c333c;
+  --accent:#3b82f6;--tip:#f59e0b;--total:#34d399;--danger:#f87171;color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.4}
+main{max-width:560px;margin:0 auto;padding:16px}
+h1{font-size:1.4rem;margin:4px 0 14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
+.card h2{font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 10px}
+label{display:block;font-size:.85rem;color:var(--muted);margin-bottom:4px}
+input{width:100%;font:inherit;font-size:1rem;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text)}
+input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.full{grid-column:1/-1}
+button{font:inherit;font-weight:600;border:0;border-radius:10px;padding:12px;cursor:pointer}
+.primary{width:100%;background:var(--accent);color:var(--accent-text)}
+.sum{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sum div{background:var(--bg);border-radius:10px;padding:10px}
+.sum small{display:block;color:var(--muted);font-size:.78rem}
+.sum b{font-size:1.15rem}
+.tip b{color:var(--tip)}
+.grand{grid-column:1/-1;text-align:center;background:var(--total)!important}
+.grand small,.grand b{color:#fff}
+.grand b{font-size:1.6rem}
+.entry{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.entry:first-of-type{border-top:0}
+.entry .d{font-weight:600}
+.entry .s{font-size:.85rem;color:var(--muted)}
+.entry .r{text-align:right;font-size:.9rem}
+.del{background:none;color:var(--danger);padding:6px 8px;font-size:1.1rem}
+.empty{color:var(--muted);text-align:center;padding:10px}
+.tipc{color:var(--tip)}
+.row>div{min-width:0}
+.exp{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.top{display:flex;align-items:center;gap:12px;margin:4px 0 14px}
+.top h1{margin:0}
+.burger{background:var(--card);border:1px solid var(--line);color:var(--text);width:44px;height:44px;font-size:1.3rem;padding:0;flex:none}
+.overlay{position:fixed;inset:0;background:var(--bg);z-index:30;overflow:auto;padding:calc(12px + env(safe-area-inset-top,0px)) 16px calc(24px + env(safe-area-inset-bottom,0px))}
+.ovin{max-width:560px;margin:0 auto}
+.ovbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.ovtitle{font-weight:700;font-size:1.15rem;text-align:center;flex:1}
+.mrow{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px}
+.mrow .mn{font-weight:700;font-size:1rem}
+.mrow .ms{font-size:.82rem;color:var(--muted);font-weight:400}
+.mrow .mt{text-align:right;font-weight:700}
+.mrow .mt span{display:block;font-size:.82rem;font-weight:400;color:var(--tip)}
+.toast{position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));max-width:528px;margin:0 auto;background:var(--text);color:var(--bg);padding:12px 14px;border-radius:10px;font-weight:600;text-align:center;display:none;z-index:20}
+.exp button{background:var(--bg);color:var(--text);border:1px solid var(--line)}
+input[type=date]{display:block;-webkit-appearance:none;appearance:none;min-width:0;max-width:100%;min-height:46px;line-height:1.3;text-align:left}
+input[type=date]::-webkit-date-and-time-value{text-align:left;min-height:1.4em}
+.nav{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.nav button{background:var(--bg);color:var(--text);border:1px solid var(--line);width:48px;font-size:1.2rem;padding:10px}
+.nav .m{font-weight:700;font-size:1.1rem;text-align:center;flex:1}
+.allt{grid-column:1/-1;text-align:center;color:var(--muted);font-size:.85rem;background:none!important;padding:2px!important}
+</style>
+</head>
+<body>
+<main>
+  <div class="top"><button class="burger" id="burger" aria-label="Archiv öffnen">☰</button><h1>⏱️ Stundenzettel</h1></div>
+  <div id="syncNote" style="color:var(--muted);font-size:.8rem;margin:-8px 0 12px"></div>
+
+  <div class="card">
+    <h2>Neuer Eintrag</h2>
+    <div class="row">
+      <div class="full"><label for="date">Datum <b id="dayHint" style="color:var(--text)"></b></label><input id="date" type="date"></div>
+      <div><label for="hours">Stunden</label><input id="hours" type="number" inputmode="decimal" step="0.25" min="0" placeholder="z. B. 7,5"></div>
+      <div><label for="wage">Stundenlohn (€)</label><input id="wage" type="number" inputmode="decimal" step="0.01" min="0" placeholder="z. B. 14,50"></div>
+      <div class="full"><label for="tip">Trinkgeld (€)</label><input id="tip" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00"></div>
+    </div>
+    <button class="primary" id="add">Eintragen</button>
+  </div>
+
+  <div class="card nav">
+    <button id="prev" aria-label="Vorheriger Monat">‹</button>
+    <div class="m" id="monthLabel"></div>
+    <button id="next" aria-label="Nächster Monat">›</button>
+  </div>
+
+  <div class="card">
+    <h2 id="sumTitle">Summen</h2>
+    <div class="sum">
+      <div><small>Stunden gesamt</small><b id="sHours">0</b></div>
+      <div><small>Lohn gesamt</small><b id="sWage">0,00 €</b></div>
+      <div class="tip"><small>Trinkgeld gesamt</small><b id="sTip">0,00 €</b></div>
+      <div><small>Einträge</small><b id="sCount">0</b></div>
+      <div class="grand"><small>Gesamt (Lohn + Trinkgeld)</small><b id="sAll">0,00 €</b></div>
+      <div class="allt" id="sAllTime"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Letzte 7 Tage</h2>
+    <div id="list"></div>
+    <div style="color:var(--muted);font-size:.8rem;margin-top:8px">Ältere Einträge findest du im Archiv (☰).</div>
+  </div>
+
+  <div class="card" id="expCard" style="display:none">
+    <h2>Export als Excel-Tabelle</h2>
+    <div class="exp">
+      <button id="expMonth">Dieser Monat</button>
+      <button id="expAll">Alle Einträge</button>
+      <button id="expJson" style="grid-column:1/-1">Sicherung speichern (JSON)</button>
+      <button id="impBtn" style="grid-column:1/-1">Sicherung einlesen (JSON)</button>
+      <input type="file" id="impFile" accept=".json,application/json" style="display:none">
+    </div>
+  </div>
+</main>
+
+<div id="archive" class="overlay" style="display:none">
+  <div class="ovin">
+    <div class="ovbar">
+      <button class="burger" id="arcBack" aria-label="Zurück">‹</button>
+      <div class="ovtitle" id="arcTitle">Stunden-Archiv</div>
+      <button class="burger" id="arcClose" aria-label="Schließen">✕</button>
+    </div>
+    <div id="arcBody"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script>
+(function(){
+  var KEY="stundenzettel:v1";
+  var entries=[],lastWage="",cur="",pending=null;
+  var $=function(id){return document.getElementById(id)};
+  var eur=new Intl.NumberFormat("de-DE",{style:"currency",currency:"EUR"});
+  var num=new Intl.NumberFormat("de-DE",{maximumFractionDigits:2});
+
+  var toastT;
+  function toast(m){
+    var t=document.getElementById("toast");
+    if(!t){t=document.createElement("div");t.id="toast";t.className="toast";document.body.appendChild(t)}
+    t.textContent=m;t.style.display="block";
+    clearTimeout(toastT);toastT=setTimeout(function(){t.style.display="none"},3000);
+  }
+  function load(){
+    try{
+      var raw=localStorage.getItem(KEY);
+      if(raw){var o=JSON.parse(raw);entries=o.entries||[];lastWage=o.lastWage||""}
+    }catch(e){entries=[]}
+  }
+  var docRef=null,busy=false,dirty=false;
+  function setNote(m){var n=document.getElementById("syncNote");if(n)n.textContent=m}
+  function pushDb(){
+    if(!docRef)return;
+    if(busy){dirty=true;return}
+    busy=true;dirty=false;
+    docRef.set({entries:entries,lastWage:lastWage,updated:Date.now()}).then(function(){
+      busy=false;if(dirty)pushDb();
+    }).catch(function(){
+      busy=false;setNote("Konto-Speicherung fehlgeschlagen, nur auf diesem Gerät gespeichert");
+    });
+  }
+  function save(){
+    try{localStorage.setItem(KEY,JSON.stringify({entries:entries,lastWage:lastWage}))}catch(e){}
+    pushDb();
+  }
+  function today(){
+    var d=new Date(),m=("0"+(d.getMonth()+1)).slice(-2),t=("0"+d.getDate()).slice(-2);
+    return d.getFullYear()+"-"+m+"-"+t;
+  }
+  function fmtDate(s){
+    var p=s.split("-");
+    var wd=new Date(+p[0],+p[1]-1,+p[2]).toLocaleDateString("de-DE",{weekday:"long"});
+    return wd+", "+p[2]+"."+p[1]+"."+p[0];
+  }
+  function val(id){
+    var v=parseFloat(String($(id).value).replace(",","."));
+    return isNaN(v)?0:v;
+  }
+  function render(){
+    var h=0,w=0,t=0,allSum=0;
+    entries.forEach(function(e){allSum+=e.hours*e.wage+e.tip});
+    var shown=entries.filter(function(e){return e.date.slice(0,7)===cur});
+    shown.forEach(function(e){h+=e.hours;w+=e.hours*e.wage;t+=e.tip});
+    var cp=cur.split("-");
+    var mName=new Date(+cp[0],+cp[1]-1,1).toLocaleDateString("de-DE",{month:"long",year:"numeric"});
+    $("monthLabel").textContent=mName;
+    $("sumTitle").textContent="Summen "+mName;
+    $("sAllTime").textContent="Alle Monate zusammen: "+eur.format(allSum);
+    $("sHours").textContent=num.format(h)+" h";
+    $("sWage").textContent=eur.format(w);
+    $("sTip").textContent=eur.format(t);
+    $("sCount").textContent=shown.length;
+    $("sAll").textContent=eur.format(w+t);
+
+    var list=$("list");
+    list.innerHTML="";
+    var dd=new Date();dd.setDate(dd.getDate()-6);
+    var from=dd.getFullYear()+"-"+("0"+(dd.getMonth()+1)).slice(-2)+"-"+("0"+dd.getDate()).slice(-2);
+    var recent=entries.filter(function(e){return e.date>=from});
+    if(!recent.length){
+      var p=document.createElement("div");p.className="empty";p.textContent="Keine Einträge in den letzten 7 Tagen.";list.appendChild(p);return;
+    }
+    recent.slice().sort(function(a,b){return a.date<b.date?1:a.date>b.date?-1:b.id-a.id}).forEach(function(e){
+      var row=document.createElement("div");row.className="entry";
+      var left=document.createElement("div");
+      var d=document.createElement("div");d.className="d";d.textContent=fmtDate(e.date);
+      var s=document.createElement("div");s.className="s";
+      s.textContent=num.format(e.hours)+" h × "+eur.format(e.wage);
+      left.appendChild(d);left.appendChild(s);
+      var right=document.createElement("div");right.className="r";
+      var l1=document.createElement("div");l1.textContent="Lohn "+eur.format(e.hours*e.wage);
+      var l2=document.createElement("div");l2.className="tipc";l2.textContent="Trinkgeld "+eur.format(e.tip);
+      var l3=document.createElement("div");l3.style.fontWeight="700";l3.textContent="= "+eur.format(e.hours*e.wage+e.tip);
+      right.appendChild(l1);right.appendChild(l2);right.appendChild(l3);
+      var del=document.createElement("button");del.className="del";del.textContent="🗑";del.setAttribute("aria-label","Eintrag löschen");
+      del.onclick=function(){
+        if(pending===e.id){
+          entries=entries.filter(function(x){return x.id!==e.id});pending=null;save();render();
+        }else{
+          pending=e.id;render();
+          setTimeout(function(){if(pending===e.id){pending=null;render()}},4000);
+        }
+      };
+      if(pending===e.id){del.textContent="Löschen?";del.style.fontSize=".85rem";del.style.fontWeight="700"}
+      row.appendChild(left);row.appendChild(right);row.appendChild(del);
+      list.appendChild(row);
+    });
+  }
+  $("add").onclick=function(){
+    var date=$("date").value||today();
+    var hours=val("hours"),wage=val("wage"),tip=val("tip");
+    if(hours<=0&&tip<=0){toast("Bitte Stunden oder Trinkgeld eingeben.");return}
+    entries.push({id:Date.now(),date:date,hours:hours,wage:wage,tip:tip});
+    lastWage=$("wage").value;
+    cur=date.slice(0,7);
+    save();
+    $("hours").value="";$("tip").value="";
+    render();
+  };
+  var dl=null;
+  function csvText(list){
+    var f=function(n){return String(Math.round(n*100)/100).replace(".",",")};
+    var rows=["Datum;Wochentag;Stunden;Stundenlohn;Lohn;Trinkgeld;Gesamt"];
+    var h=0,w=0,t=0;
+    list.slice().sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:a.id-b.id}).forEach(function(e){
+      var p=e.date.split("-"),wd=fmtDate(e.date).split(",")[0],lohn=e.hours*e.wage;
+      h+=e.hours;w+=lohn;t+=e.tip;
+      rows.push([p[2]+"."+p[1]+"."+p[0],wd,f(e.hours),f(e.wage),f(lohn),f(e.tip),f(lohn+e.tip)].join(";"));
+    });
+    rows.push(["Summe","",f(h),"",f(w),f(t),f(w+t)].join(";"));
+    return "\ufeff"+rows.join("\r\n");
+  }
+  function saveFile(list,all){
+    var base=all?"stundenzettel-alle":"stundenzettel-"+cur;
+    if(!window.ExcelJS)return dl.save({filename:base+".csv",data:csvText(list)});
+    var sorted=list.slice().sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:a.id-b.id});
+    var money='#,##0.00" €"';
+    var wb=new window.ExcelJS.Workbook();
+    var ws=wb.addWorksheet(all?"Alle Einträge":monthName(cur).slice(0,31),{views:[{state:"frozen",ySplit:1}]});
+    ws.columns=[
+      {header:"Datum",width:14},{header:"Wochentag",width:14},{header:"Stunden",width:11},
+      {header:"Stundenlohn",width:14},{header:"Lohn",width:14},{header:"Trinkgeld",width:14},{header:"Gesamt",width:15}
+    ];
+    var thin={style:"thin",color:{argb:"FFD1D5DB"}};
+    var box={top:thin,left:thin,bottom:thin,right:thin};
+    var hr=ws.getRow(1);
+    hr.height=24;
+    hr.eachCell(function(c){
+      c.font={bold:true,color:{argb:"FFFFFFFF"}};
+      c.fill={type:"pattern",pattern:"solid",fgColor:{argb:"FF2563EB"}};
+      c.alignment={horizontal:"center",vertical:"middle"};
+      c.border=box;
+    });
+    var h=0,w=0,t=0;
+    sorted.forEach(function(e,i){
+      var r=i+2,p=e.date.split("-"),lohn=e.hours*e.wage;
+      h+=e.hours;w+=lohn;t+=e.tip;
+      var row=ws.addRow([
+        new Date(Date.UTC(+p[0],+p[1]-1,+p[2])),
+        fmtDate(e.date).split(",")[0],
+        e.hours,e.wage,
+        {formula:"C"+r+"*D"+r,result:lohn},
+        e.tip,
+        {formula:"E"+r+"+F"+r,result:lohn+e.tip}
+      ]);
+      row.getCell(1).numFmt="DD.MM.YYYY";
+      row.getCell(3).numFmt="0.00";
+      [4,5,6,7].forEach(function(n){row.getCell(n).numFmt=money});
+      row.getCell(1).alignment={horizontal:"left"};
+      row.eachCell(function(c){c.border=box});
+      row.getCell(7).font={bold:true};
+    });
+    var last=sorted.length+1;
+    var sr=ws.addRow(["Summe","",
+      {formula:"SUM(C2:C"+last+")",result:h},"",
+      {formula:"SUM(E2:E"+last+")",result:w},
+      {formula:"SUM(F2:F"+last+")",result:t},
+      {formula:"SUM(G2:G"+last+")",result:w+t}
+    ]);
+    sr.height=22;
+    sr.eachCell({includeEmpty:true},function(c){
+      c.font={bold:true};
+      c.fill={type:"pattern",pattern:"solid",fgColor:{argb:"FFE5E7EB"}};
+      c.border={top:{style:"medium",color:{argb:"FF111827"}},left:thin,bottom:thin,right:thin};
+    });
+    sr.getCell(3).numFmt="0.00";
+    [5,6,7].forEach(function(n){sr.getCell(n).numFmt=money});
+    return wb.xlsx.writeBuffer().then(function(buf){
+      return dl.save({filename:base+".xlsx",data:new Blob([buf])});
+    });
+  }
+  function doExport(all){
+    if(!dl)return;
+    var list=all?entries:entries.filter(function(e){return e.date.slice(0,7)===cur});
+    if(!list.length){toast("Keine Einträge zum Exportieren.");return}
+    saveFile(list,all).catch(function(err){
+      if(!err||err.code!=="declined")toast("Export ist hier leider nicht möglich.");
+    });
+  }
+  $("expMonth").onclick=function(){doExport(false)};
+  $("expAll").onclick=function(){doExport(true)};
+  $("expJson").onclick=function(){
+    if(!dl)return;
+    dl.save({filename:"stundenzettel-sicherung.json",data:JSON.stringify({entries:entries,lastWage:lastWage})}).catch(function(err){
+      if(!err||err.code!=="declined")toast("Sicherung ist hier leider nicht möglich.");
+    });
+  };
+  function localSave(o){
+    var ext=o.filename.split(".").pop().toLowerCase();
+    var types={xlsx:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",json:"application/json",csv:"text/csv;charset=utf-8"};
+    var blob=new Blob([o.data],{type:types[ext]||"application/octet-stream"});
+    function viaLink(){
+      var a=document.createElement("a");
+      a.href=URL.createObjectURL(blob);a.download=o.filename;
+      document.body.appendChild(a);a.click();
+      setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},4000);
+      return {status:"saved"};
+    }
+    var file=null;
+    try{file=new File([blob],o.filename,{type:blob.type})}catch(e){}
+    if(file&&navigator.canShare&&navigator.canShare({files:[file]})){
+      return navigator.share({files:[file],title:o.filename}).then(function(){return {status:"saved"}}).catch(function(err){
+        if(err&&err.name==="AbortError")return Promise.reject({code:"declined"});
+        return viaLink();
+      });
+    }
+    return Promise.resolve(viaLink());
+  }
+  dl={save:localSave};
+  $("expCard").style.display="";
+  $("impBtn").onclick=function(){$("impFile").click()};
+  $("impFile").onchange=function(){
+    var f=this.files&&this.files[0];
+    if(!f)return;
+    var input=this,r=new FileReader();
+    r.onload=function(){
+      try{
+        var o=JSON.parse(r.result),inc=o.entries||[],have={},n=0;
+        entries.forEach(function(e){have[e.id]=true});
+        inc.forEach(function(e,i){
+          if(!e||!e.date)return;
+          var id=e.id||(Date.now()+i);
+          if(have[id])return;
+          have[id]=true;n++;
+          entries.push({id:id,date:String(e.date).slice(0,10),hours:+e.hours||0,wage:+e.wage||0,tip:+e.tip||0});
+        });
+        if(o.lastWage&&!lastWage){lastWage=String(o.lastWage);$("wage").value=lastWage}
+        save();render();toast(n+" Eintr\u00e4ge \u00fcbernommen.");
+      }catch(x){toast("Datei konnte nicht gelesen werden.")}
+      input.value="";
+    };
+    r.readAsText(f);
+  };
+  var arcMonth=null;
+  function monthName(k){
+    var p=k.split("-");
+    return new Date(+p[0],+p[1]-1,1).toLocaleDateString("de-DE",{month:"long",year:"numeric"});
+  }
+  function sums(list){
+    var h=0,w=0,t=0;
+    list.forEach(function(e){h+=e.hours;w+=e.hours*e.wage;t+=e.tip});
+    return {h:h,w:w,t:t,all:w+t};
+  }
+  function mk(tag,cls,txt){
+    var n=document.createElement(tag);
+    if(cls)n.className=cls;
+    if(txt!==undefined)n.textContent=txt;
+    return n;
+  }
+  function renderArchive(){
+    var body=$("arcBody");
+    body.innerHTML="";
+    $("arcBack").style.visibility=arcMonth?"visible":"hidden";
+    if(!arcMonth){
+      $("arcTitle").textContent="Stunden-Archiv";
+      var map={};
+      entries.forEach(function(e){var k=e.date.slice(0,7);(map[k]=map[k]||[]).push(e)});
+      var keys=Object.keys(map).sort().reverse();
+      if(!keys.length){body.appendChild(mk("div","empty","Noch keine Einträge im Archiv."));return}
+      keys.forEach(function(k){
+        var s=sums(map[k]);
+        var b=mk("button","mrow");
+        var l=mk("div");
+        l.appendChild(mk("div","mn",monthName(k)));
+        l.appendChild(mk("div","ms",num.format(s.h)+" h · "+map[k].length+" Einträge"));
+        var r=mk("div","mt",eur.format(s.all));
+        r.appendChild(mk("span","","davon Trinkgeld "+eur.format(s.t)));
+        b.appendChild(l);b.appendChild(r);
+        b.onclick=function(){arcMonth=k;renderArchive();window.scrollTo(0,0)};
+        body.appendChild(b);
+      });
+      return;
+    }
+    $("arcTitle").textContent=monthName(arcMonth);
+    var list=entries.filter(function(e){return e.date.slice(0,7)===arcMonth});
+    var s=sums(list);
+    var card=mk("div","card");
+    card.appendChild(mk("h2","","Summen"));
+    var g=mk("div","sum");
+    [["Stunden gesamt",num.format(s.h)+" h",""],["Lohn gesamt",eur.format(s.w),""],["Trinkgeld gesamt",eur.format(s.t),"tip"],["Einträge",String(list.length),""]].forEach(function(x){
+      var d=mk("div",x[2]);d.appendChild(mk("small","",x[0]));d.appendChild(mk("b","",x[1]));g.appendChild(d);
+    });
+    var gr=mk("div","grand");gr.appendChild(mk("small","","Gesamt (Lohn + Trinkgeld)"));gr.appendChild(mk("b","",eur.format(s.all)));
+    g.appendChild(gr);
+    card.appendChild(g);
+    body.appendChild(card);
+    var dc=mk("div","card");
+    dc.appendChild(mk("h2","","Einzelne Tage"));
+    list.slice().sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:a.id-b.id}).forEach(function(e){
+      var row=mk("div","entry");
+      var left=mk("div");
+      left.appendChild(mk("div","d",fmtDate(e.date)));
+      left.appendChild(mk("div","s",num.format(e.hours)+" h × "+eur.format(e.wage)));
+      var right=mk("div","r");
+      right.appendChild(mk("div","","Lohn "+eur.format(e.hours*e.wage)));
+      right.appendChild(mk("div","tipc","Trinkgeld "+eur.format(e.tip)));
+      var tt=mk("div","","= "+eur.format(e.hours*e.wage+e.tip));tt.style.fontWeight="700";
+      right.appendChild(tt);
+      row.appendChild(left);row.appendChild(right);
+      dc.appendChild(row);
+    });
+    body.appendChild(dc);
+    var go=mk("button","primary","Diesen Monat im Hauptbildschirm öffnen");
+    go.onclick=function(){cur=arcMonth;$("archive").style.display="none";render();window.scrollTo(0,0)};
+    body.appendChild(go);
+  }
+  $("burger").onclick=function(){arcMonth=null;$("archive").style.display="block";renderArchive();$("archive").scrollTop=0};
+  $("arcBack").onclick=function(){arcMonth=null;renderArchive();$("archive").scrollTop=0};
+  $("arcClose").onclick=function(){$("archive").style.display="none"};
+  function shift(n){
+    var p=cur.split("-"),d=new Date(+p[0],+p[1]-1+n,1);
+    cur=d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2);
+    render();
+  }
+  $("prev").onclick=function(){shift(-1)};
+  $("next").onclick=function(){shift(1)};
+  load();
+  cur=today().slice(0,7);
+  function hint(){
+    var v=$("date").value;
+    $("dayHint").textContent=v?"· "+fmtDate(v).split(",")[0]:"";
+  }
+  $("date").addEventListener("input",hint);
+  $("date").value=today();
+  hint();
+  $("wage").value=lastWage;
+  render();
+  setNote("Alles wird auf diesem Gerät gespeichert. Mach ab und zu eine Sicherung (JSON).");
+  try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
+  if("serviceWorker" in navigator){
+    window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})});
+  }
+})();
+</script>
+</body>
+</html>
